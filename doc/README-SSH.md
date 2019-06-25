@@ -124,6 +124,7 @@ Requires=trezor-ssh-agent.socket
 
 [Service]
 Type=simple
+Restart=always
 Environment="DISPLAY=:0"
 Environment="PATH=/bin:/usr/bin:/usr/local/bin:%h/.local/bin"
 ExecStart=/usr/bin/trezor-agent --foreground --sock-path %t/trezor-agent/S.ssh IDENTITY
@@ -132,6 +133,13 @@ ExecStart=/usr/bin/trezor-agent --foreground --sock-path %t/trezor-agent/S.ssh I
 If you've installed `trezor-agent` locally you may have to change the path in `ExecStart=`.
 
 Replace `IDENTITY` with the identity you used when exporting the public key.
+
+Alternatively, provide a path (starting with /) to a file containing a list of public keys
+to be managed by trezor (this is more convenient when running trezor-agent as a systemd service).
+
+````
+ExecStart=/usr/bin/trezor-agent --foreground --sock-path %t/trezor-agent/S.ssh /home/myUseName/.ssh/trezor.conf
+````
 
 If you have multiple Trezors connected, you can select which one to use via a `TREZOR_PATH`
 environment variable. Use `trezorctl list` to find the correct path. Then add it
@@ -168,8 +176,10 @@ systemctl --user enable trezor-ssh-agent.socket
 ##### 3. Add this line to your `.bashrc` or equivalent file:
 
 ```bash
-export SSH_AUTH_SOCK=$(systemctl show --user --property=Listen trezor-ssh-agent.socket | grep -o "/run.*")
+export SSH_AUTH_SOCK=$(systemctl show --user --property=Listen trezor-ssh-agent.socket | grep -o "/run.*" | cut -d " " -f 1)
 ```
+
+Make sure the socket path contained in that variable matches the one used by trezor-agent.
 
 ##### 4. SSH will now automatically use your device key in all terminals.
 
